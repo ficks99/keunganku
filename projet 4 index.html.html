@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Keuangan Pribadi - iOS Style v7</title>
+    <style>
+        /* iOS Color Variables */
+        :root {
+            --bg-body: #F2F2F7;
+            --bg-card: #FFFFFF;
+            --text-main: #000000;
+            --text-secondary: #8E8E93;
+            --ios-blue: #007AFF;
+            --ios-green: #34C759;
+            --ios-red: #FF3B30;
+            --ios-separator: rgba(60, 60, 67, 0.2);
+            --ios-input-bg: #7676801F;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-body); 
+            margin: 0; 
+            padding: 20px 15px; 
+            display: flex; 
+            justify-content: center;
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
+
+        .card { background-color: var(--bg-card); border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+
+        h2 { text-align: center; font-weight: 700; margin: 0 0 15px 0; font-size: 24px; letter-spacing: -0.5px;}
+        
+        .balance-title { color: var(--text-secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; margin-bottom: 5px; }
+        .balance-amount { font-size: 38px; font-weight: 700; text-align: center; margin: 0; letter-spacing: -1px; }
+
+        .summary { display: flex; justify-content: space-between; gap: 12px; }
+        .summary-box { flex: 1; border-radius: 12px; padding: 12px; text-align: center; }
+        .summary-box.income { background-color: rgba(52, 199, 89, 0.1); color: var(--ios-green); }
+        .summary-box.expense { background-color: rgba(255, 59, 48, 0.1); color: var(--ios-red); }
+        .summary-box span { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+        .summary-box strong { font-size: 16px; }
+
+        input, select { width: 100%; padding: 14px 16px; background-color: var(--ios-input-bg); border: none; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 12px; font-family: inherit; outline: none; }
+        input:focus, select:focus { border: 1.5px solid var(--ios-blue); background-color: #fff; }
+        
+        button { width: 100%; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.2s; }
+        button:active { opacity: 0.7; }
+        .btn-primary { background-color: var(--ios-blue); color: white; }
+        .btn-secondary { background-color: var(--ios-input-bg); color: var(--ios-red); margin-top: 10px; display: none; }
+        .btn-gaji { background-color: #000; color: white; display: flex; align-items: center; justify-content: center; gap: 8px;}
+
+        .section-title { font-size: 18px; font-weight: 600; margin: 10px 0 15px 0; }
+        .history-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+        .history-list li { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 0.5px solid var(--ios-separator); font-size: 15px;}
+        .history-list li:last-child { border-bottom: none; padding-bottom: 0; }
+        .history-list li.plus .amount { color: var(--ios-green); font-weight: 600; }
+        .history-list li.minus .amount { color: var(--text-main); font-weight: 600;}
+        .history-item-text { display: flex; flex-direction: column; flex: 1; }
+        .history-date { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        
+        .action-group { display: flex; align-items: center; gap: 8px; margin-left: 10px;}
+        .icon-btn { background: none; border: none; padding: 5px; font-size: 16px; width: auto; color: var(--text-secondary); cursor: pointer;}
+        .icon-btn:hover { transform: scale(1.1); }
+
+        .advice-banner { padding: 16px; border-radius: 16px; font-size: 14px; line-height: 1.4; display: none; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);}
+        .advice-banner.danger { background-color: #FFEBEA; color: #C62828; }
+        .advice-banner.warning { background-color: #FFF8E1; color: #F57F17; }
+        .advice-banner.success { background-color: #E8F5E9; color: #2E7D32; }
+
+        /* Modal iOS */
+        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); align-items: center; justify-content: center; }
+        .modal-content { position: relative; background-color: var(--bg-card); width: 85%; max-width: 350px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto;}
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: 400; color: var(--text-secondary); cursor: pointer; line-height: 1;}
+        .close-btn:hover { color: var(--text-main); }
+        .modal-content h3 { margin: 0 0 5px 0; text-align: center; }
+        .modal-desc { font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 15px; }
+        .modal-content label { font-size: 13px; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 6px; margin-top: 10px;}
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .btn-cancel { background-color: var(--ios-input-bg); color: var(--text-main); }
+        .btn-save { background-color: var(--ios-blue); color: white; }
+
+        /* Style Kotak Sisa Gaji */
+        .sisa-gaji-box { background-color: var(--ios-input-bg); padding: 12px; border-radius: 12px; text-align: center; font-size: 14px; font-weight: 600; color: var(--ios-blue); margin-bottom: 15px; transition: 0.3s; position: sticky; top: -10px; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+        .sisa-gaji-box.negative { color: var(--ios-red); background-color: #FFEBEA; }
+
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="card">
+        <h2>Dompetku</h2>
+        <div class="balance-title">Saldo Aktif (Bisa Dipakai)</div>
+        <div class="balance-amount" id="balance">Rp 0</div>
+        
+        <div class="summary" style="margin-top: 20px;">
+            <div class="summary-box income">
+                <span>Pemasukan</span><strong id="income-total">Rp 0</strong>
+            </div>
+            <div class="summary-box expense">
+                <span>Pengeluaran</span><strong id="expense-total">Rp 0</strong>
+            </div>
+        </div>
+    </div>
+
+    <div id="advice-box" class="advice-banner"></div>
+
+    <button class="btn-gaji" onclick="openModal()">
+        <span style="font-size: 20px;"></span> Input Gaji & Alokasi
+    </button>
+
+    <div class="card">
+        <div class="section-title" id="form-title">Catat Transaksi</div>
+        <form id="transaction-form" style="margin:0;">
+            <input type="text" id="text" placeholder="Keterangan (Cth: Kopi, Bensin)" required>
+            <input type="number" id="amount" placeholder="Jumlah (Tanpa Titik, Cth: 25000)" required>
+            <select id="type">
+                <option value="minus">Pengeluaran</option>
+                <option value="plus">Pemasukan Tambahan</option>
+            </select>
+            <button type="submit" id="submit-btn" class="btn-primary">Simpan Transaksi</button>
+            <button type="button" id="cancel-edit-btn" class="btn-secondary" onclick="cancelEdit()">Batal Edit</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="section-title">Riwayat Terakhir</div>
+        <ul id="history" class="history-list"></ul>
+    </div>
+</div>
+
+<!-- Modal Popup Alokasi Gaji (Manual Input) -->
+<div id="salaryModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        
+        <h3>Alokasi Gaji Manual</h3>
+        <div class="modal-desc">Atur sendiri nominal setiap pos pengeluaran.</div>
+        
+        <label>💵 Total Gaji Bulan Ini</label>
+        <input type="number" id="gaji-total" placeholder="0" oninput="calculateSisa()">
+
+        <!-- Indikator Sisa Gaji -->
+        <div id="sisa-gaji-info" class="sisa-gaji-box">Sisa Belum Dialokasikan: Rp 0</div>
+
+        <label>🏠 Bayar Kontrakan</label>
+        <input type="number" id="budget-kontrakan" placeholder="0" oninput="calculateSisa()">
+
+        <label>🌐 Bayar Internet / WiFi</label>
+        <input type="number" id="budget-internet" placeholder="0" oninput="calculateSisa()">
+
+        <label>💳 Cicilan / Hutang</label>
+        <input type="number" id="budget-cicilan" placeholder="0" oninput="calculateSisa()">
+
+        <label>🍔 Konsumsi (Makan/Minum)</label>
+        <input type="number" id="budget-konsumsi" placeholder="0" oninput="calculateSisa()">
+
+        <label>🚗 Transportasi</label>
+        <input type="number" id="budget-transport" placeholder="0" oninput="calculateSisa()">
+
+        <label>🚨 Dana Darurat</label>
+        <input type="number" id="budget-darurat" placeholder="0" oninput="calculateSisa()">
+
+        <label>💰 Tabungan / Investasi</label>
+        <input type="number" id="budget-tabungan" placeholder="0" oninput="calculateSisa()">
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">Batal</button>
+            <button class="btn-save" onclick="saveGaji()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const balance = document.getElementById('balance');
+    const incomeTotal = document.getElementById('income-total');
+    const expenseTotal = document.getElementById('expense-total');
+    const historyList = document.getElementById('history');
+    const form = document.getElementById('transaction-form');
+    const adviceBox = document.getElementById('advice-box');
+    const modal = document.getElementById('salaryModal');
+    const sisaGajiInfo = document.getElementById('sisa-gaji-info');
+    
+    let editId = null;
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    let currentAdvice = JSON.parse(localStorage.getItem('advice')) || null;
+
+    function formatRupiah(angka) {
+        return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function getTodayDate() {
+        const date = new Date();
+        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function generateId() {
+        return Date.now() + Math.floor(Math.random() * 1000);
+    }
+
+    function addOrUpdateTransaction(e) {
+        e.preventDefault();
+        const textInput = document.getElementById('text').value;
+        const amountInput = parseInt(document.getElementById('amount').value);
+        const typeInput = document.getElementById('type').value;
+
+        if (editId !== null) {
+            const index = transactions.findIndex(trx => trx.id === editId);
+            if (index !== -1) {
+                transactions[index].text = textInput;
+                transactions[index].amount = amountInput;
+                transactions[index].type = typeInput;
+            }
+            cancelEdit();
+        } else {
+            transactions.push({ id: generateId(), text: textInput, amount: amountInput, type: typeInput, date: getTodayDate() });
+            document.getElementById('text').value = ''; 
+            document.getElementById('amount').value = '';
+        }
+        updateUI();
+    }
+
+    function editTx(id) {
+        const trx = transactions.find(t => t.id === id);
+        if (trx) {
+            document.getElementById('text').value = trx.text;
+            document.getElementById('amount').value = trx.amount;
+            document.getElementById('type').value = trx.type;
+            editId = id;
+            document.getElementById('form-title').innerText = "Edit Transaksi";
+            document.getElementById('submit-btn').innerText = "Simpan Perubahan";
+            document.getElementById('cancel-edit-btn').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    function cancelEdit() {
+        editId = null;
+        document.getElementById('text').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('type').value = 'minus';
+        document.getElementById('form-title').innerText = "Catat Transaksi";
+        document.getElementById('submit-btn').innerText = "Simpan Transaksi";
+        document.getElementById('cancel-edit-btn').style.display = "none";
+    }
+
+    function deleteTx(id) {
+        if (confirm("Hapus transaksi ini?")) {
+            transactions = transactions.filter(t => t.id !== id);
+            updateUI();
+        }
+    }
+
+    function openModal() { modal.style.display = 'flex'; }
+    
+    function closeModal() { 
+        modal.style.display = 'none'; 
+        document.getElementById('gaji-total').value = ''; 
+        document.getElementById('budget-kontrakan').value = ''; 
+        document.getElementById('budget-internet').value = ''; 
+        document.getElementById('budget-cicilan').value = ''; 
+        document.getElementById('budget-konsumsi').value = ''; 
+        document.getElementById('budget-transport').value = ''; 
+        document.getElementById('budget-darurat').value = ''; 
+        document.getElementById('budget-tabungan').value = ''; 
+        
+        sisaGajiInfo.innerText = "Sisa Belum Dialokasikan: Rp 0";
+        sisaGajiInfo.classList.remove('negative');
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) closeModal();
+    }
+
+    function calculateSisa() {
+        const gaji = parseInt(document.getElementById('gaji-total').value) || 0;
+        const kontrakan = parseInt(document.getElementById('budget-kontrakan').value) || 0;
+        const internet = parseInt(document.getElementById('budget-internet').value) || 0;
+        const cicilan = parseInt(document.getElementById('budget-cicilan').value) || 0;
+        const konsumsi = parseInt(document.getElementById('budget-konsumsi').value) || 0;
+        const transport = parseInt(document.getElementById('budget-transport').value) || 0;
+        const darurat = parseInt(document.getElementById('budget-darurat').value) || 0;
+        const tabungan = parseInt(document.getElementById('budget-tabungan').value) || 0;
+
+        const totalDialokasikan = kontrakan + internet + cicilan + konsumsi + transport + darurat + tabungan;
+        const sisa = gaji - totalDialokasikan;
+
+        sisaGajiInfo.innerText = `Sisa Belum Dialokasikan: ${formatRupiah(sisa)}`;
+        
+        if (sisa < 0) {
+            sisaGajiInfo.classList.add('negative');
+            sisaGajiInfo.innerText = `Minus/Melebihi Gaji!: ${formatRupiah(sisa)}`;
+        } else {
+            sisaGajiInfo.classList.remove('negative');
+        }
+    }
+
+    function saveGaji() {
+        const gaji = parseInt(document.getElementById('gaji-total').value) || 0;
+        const kontrakan = parseInt(document.getElementById('budget-kontrakan').value) || 0;
+        const internet = parseInt(document.getElementById('budget-internet').value) || 0;
+        const cicilan = parseInt(document.getElementById('budget-cicilan').value) || 0;
+        const konsumsi = parseInt(document.getElementById('budget-konsumsi').value) || 0;
+        const transport = parseInt(document.getElementById('budget-transport').value) || 0;
+        const darurat = parseInt(document.getElementById('budget-darurat').value) || 0;
+        const tabungan = parseInt(document.getElementById('budget-tabungan').value) || 0;
+
+        if (gaji === 0 || isNaN(gaji)) return alert("Mohon masukkan nominal gaji.");
+        
+        const totalDialokasikan = kontrakan + internet + cicilan + konsumsi + transport + darurat + tabungan;
+        if (totalDialokasikan > gaji) {
+            return alert("Alokasi dana melebihi total gaji! Silakan kurangi pos pengeluaran Anda.");
+        }
+
+        const dateStr = getTodayDate();
+        transactions.push({ id: generateId(), text: 'Gaji Masuk', amount: gaji, type: 'plus', date: dateStr });
+        
+        const danaHarianAktif = konsumsi + transport; 
+        const jatahPerHari = Math.floor(danaHarianAktif / 30);
+        const rasioCicilan = (cicilan / gaji) * 100;
+        const standarMinimalHarian = 40000; 
+
+        if (rasioCicilan > 30) {
+            currentAdvice = { type: 'danger', text: `<b>⚠️ Cicilan Terlalu Besar!</b><br>Cicilan memakan ${rasioCicilan.toFixed(1)}% gaji (Batas aman 30%). Sisa harianmu: <b>${formatRupiah(jatahPerHari)}/hari</b>.<br><i>Solusi: Stop hutang baru & lunasi segera.</i>` };
+        } else if (jatahPerHari < standarMinimalHarian && danaHarianAktif > 0) {
+            currentAdvice = { type: 'warning', text: `<b>💡 Peringatan Saldo Harian</b><br>Jatah harianmu <b>${formatRupiah(jatahPerHari)}/hari</b> (di bawah standar).<br><i>Solusi: Berhemat di 2 minggu pertama agar saldo cukup 30 hari.</i>` };
+        } else {
+            currentAdvice = { type: 'success', text: `<b>✅ Keuangan Terencana</b><br>Alokasi berhasil disimpan. Jika ada, jatah harianmu sekitar <b>${formatRupiah(jatahPerHari)}/hari</b>.<br><i>Tetap disiplin dan catat pengeluaran rutin!</i>` };
+        }
+
+        // Catat pengeluaran ke riwayat jika diisi
+        if(kontrakan > 0) transactions.push({ id: generateId(), text: 'Bayar Kontrakan', amount: kontrakan, type: 'minus', date: dateStr });
+        if(internet > 0) transactions.push({ id: generateId(), text: 'Bayar Internet/WiFi', amount: internet, type: 'minus', date: dateStr });
+        if(cicilan > 0) transactions.push({ id: generateId(), text: 'Bayar Cicilan', amount: cicilan, type: 'minus', date: dateStr });
+        if(darurat > 0) transactions.push({ id: generateId(), text: 'Dana Darurat (Disimpan)', amount: darurat, type: 'minus', date: dateStr });
+        if(tabungan > 0) transactions.push({ id: generateId(), text: 'Tabungan (Disimpan)', amount: tabungan, type: 'minus', date: dateStr });
+
+        localStorage.setItem('advice', JSON.stringify(currentAdvice));
+        closeModal();
+        updateUI();
+    }
+
+    function updateUI() {
+        historyList.innerHTML = '';
+        let totalIncome = 0; let totalExpense = 0;
+
+        transactions.slice().reverse().forEach(trx => {
+            if (trx.type === 'plus') totalIncome += trx.amount;
+            else totalExpense += trx.amount;
+
+            const li = document.createElement('li');
+            li.classList.add(trx.type);
+            li.innerHTML = `
+                <div class="history-item-text">
+                    <span>${trx.text}</span>
+                    <span class="history-date">${trx.date || getTodayDate()}</span>
+                </div>
+                <div class="action-group">
+                    <span class="amount">${trx.type === 'plus' ? '+' : '-'}${formatRupiah(trx.amount)}</span>
+                    <button class="icon-btn" onclick="editTx(${trx.id})" title="Edit">✏️</button>
+                    <button class="icon-btn" onclick="deleteTx(${trx.id})" title="Hapus">🗑️</button>
+                </div>
+            `;
+            historyList.appendChild(li);
+        });
+
+        const currentBalance = totalIncome - totalExpense;
+        balance.innerText = formatRupiah(currentBalance);
+        incomeTotal.innerText = formatRupiah(totalIncome);
+        expenseTotal.innerText = formatRupiah(totalExpense);
+
+        if (currentAdvice) {
+            adviceBox.style.display = 'block';
+            adviceBox.className = `advice-banner ${currentAdvice.type}`;
+            adviceBox.innerHTML = currentAdvice.text;
+        }
+
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
+
+    form.addEventListener('submit', addOrUpdateTransaction);
+    updateUI(); 
+</script>
+
+</body>
+</html>
